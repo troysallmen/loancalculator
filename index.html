@@ -72,7 +72,8 @@
       <option value="650">650–699</option>
       <option value="600">600–649</option>
       <option value="550">550–599</option>
-      <option value="500">300–549</option>
+      <option value="550">500–549</option>
+      <option value="500">300–499</option>
     </select>
 
     <label for="term">Loan Term (months):</label>
@@ -94,6 +95,8 @@
       <option value="3000">3000</option>
       <option value="3500">3500</option>
       <option value="4000">4000</option>
+      <option value="4500">4500</option>
+      <option value="5000">5000</option>
     </select>
 
     <button onclick="calculateCar()">Estimate</button>
@@ -113,13 +116,14 @@
     }
 
     function getAPR(score) {
-      if (score >= 800) return 0.035;
-      if (score >= 750) return 0.045;
-      if (score >= 700) return 0.055;
-      if (score >= 650) return 0.075;
-      if (score >= 600) return 0.11;
-      if (score >= 550) return 0.15;
-      return 0.20;
+      if (score >= 800) return 0.04;
+      if (score >= 750) return 0.06;
+      if (score >= 700) return 0.08;
+      if (score >= 650) return 0.10;
+      if (score >= 600) return 0.15;
+      if (score >= 550) return 0.20;
+      if (score >= 500) return 0.25;
+      return 0.30;
     }
 
     // Define loan limits by credit score
