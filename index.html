@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle Estimate</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f4f4f4;
+    }
+    .calculator {
+      background: #fff;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      background: #e8f5e9;
+      padding: 15px;
+      border-left: 4px solid #4CAF50;
+    }
+    .warning {
+      margin-top: 20px;
+      background: #ffe0b2;
+      padding: 15px;
+      border-left: 4px solid #ff7043;
+      color: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator">
+    <h2>Vehicle Estimate</h2>
+
+    <label for="payment">Monthly Payment:</label>
+    <select id="payment"></select>
+
+    <label for="credit">Credit Score:</label>
+    <select id="credit">
+      <option value="800">800–850</option>
+      <option value="750">750–799</option>
+      <option value="700">700–749</option>
+      <option value="650">650–699</option>
+      <option value="600">600–649</option>
+      <option value="550">550–599</option>
+      <option value="500">300–549</option>
+    </select>
+
+    <label for="term">Loan Term (months):</label>
+    <select id="term">
+      <option value="48">48 months</option>
+      <option value="60">60 months</option>
+      <option value="72" selected>72 months</option>
+      <option value="84">84 months</option>
+    </select>
+
+    <label for="downpayment">Down Payment ($0 or $500 increments):</label>
+    <select id="downpayment">
+      <option value="0">0</option>
+      <option value="500">500</option>
+      <option value="1000">1000</option>
+      <option value="1500">1500</option>
+      <option value="2000">2000</option>
+      <option value="2500">2500</option>
+      <option value="3000">3000</option>
+      <option value="3500">3500</option>
+      <option value="4000">4000</option>
+    </select>
+
+    <button onclick="calculateCar()">Estimate</button>
+
+    <div class="result" id="result" style="display: none;"></div>
+    <div class="warning" id="warning" style="display: none;"></div>
+  </div>
+
+  <script>
+    // Populate payment dropdown
+    const paymentSelect = document.getElementById("payment");
+    for (let i = 200; i <= 1000; i += 50) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.text = `$${i} / month`;
+      paymentSelect.add(option);
+    }
+
+    function getAPR(score) {
+      if (score >= 800) return 0.035;
+      if (score >= 750) return 0.045;
+      if (score >= 700) return 0.055;
+      if (score >= 650) return 0.075;
+      if (score >= 600) return 0.11;
+      if (score >= 550) return 0.15;
+      return 0.20;
+    }
+
+    // Define loan limits by credit score
+    function getLoanLimitByCreditScore(score) {
+      if (score >= 750) return 50000;  // No limit, most loans approved
+      if (score >= 700) return 40000;  // Up to $40,000
+      if (score >= 650) return 25000;  // Up to $25,000
+      if (score >= 600) return 15000;  // Up to $15,000
+      return 10000;  // Below 600, max loan $10,000
+    }
+
+    function calculateCar() {
+      const payment = parseFloat(document.getElementById("payment").value);
+      const credit = parseInt(document.getElementById("credit").value);
+      const term = parseInt(document.getElementById("term").value);
+      const downPayment = parseFloat(document.getElementById("downpayment").value); // Get down payment from dropdown
+
+      const apr = getAPR(credit);
+      const monthlyRate = apr / 12;
+
+      // Calculate the vehicle base price (before tax, title, and fees)
+      const vehicleBasePrice = payment * ((1 - Math.pow(1 + monthlyRate, -term)) / monthlyRate);
+
+      // Calculate North Carolina-specific taxes and fees
+      const highwayUseTax = vehicleBasePrice * 0.03;  // 3% sales tax
+      const titleAndRegistrationFees = 779;
+      const countySpecificFees = 126;
+
+      // Calculate the total Out-the-Door (OTD) price (includes taxes/fees, not affected by down payment)
+      const totalCarPrice = vehicleBasePrice + highwayUseTax + titleAndRegistrationFees + countySpecificFees;
+
+      // Calculate the loan amount (vehicle base price - down payment)
+      const loanAmount = vehicleBasePrice - downPayment;
+
+      // Display the results
+      const resultDiv = document.getElementById("result");
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = `
+        <strong>Vehicle Base Price:</strong> $${vehicleBasePrice.toFixed(0)}<br>
+        <strong>Out-the-Door Price (OTD):</strong> $${totalCarPrice.toFixed(0)}<br>
+        <strong>APR Estimate:</strong> ${(apr * 100).toFixed(1)}%<br>
+        <strong>Loan Term:</strong> ${term} months<br>
+        <strong>Down Payment:</strong> $${downPayment.toFixed(0)}
+      `;
+
+      // Loan limit logic based on credit score
+      const warningDiv = document.getElementById("warning");
+      warningDiv.style.display = "none";  // Hide warning by default
+
+      const loanLimit = getLoanLimitByCreditScore(credit);
+
+      // Show a warning if the loan amount is too high for the user's credit score
+      if (loanAmount > loanLimit) {
+        warningDiv.style.display = "block";
+        warningDiv.innerHTML = `Warning: With a credit score of ${credit}, securing a loan of $${loanAmount.toFixed(0)} may be challenging. Consider a lower loan amount, increasing your down payment, or finding a cosigner.`;
+      }
+    }
+  </script>
+
+</body>
+</html>
